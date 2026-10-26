@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StudyTimer - v1 (Prototype)</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(circle at top, #1e1e2f 0%, #0d0e15 100%);
+      color: #f1f5f9;
+      padding: 20px;
+    }
+
+    .container {
+      background: rgba(22, 27, 34, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(12px);
+      width: 100%;
+      max-width: 380px;
+      padding: 36px 28px;
+      border-radius: 20px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), 0 0 40px rgba(99, 102, 241, 0.1);
+      text-align: center;
+      position: relative;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 12px;
+      font-size: 11px;
+      letter-spacing: 1px;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: #818cf8;
+      background: rgba(99, 102, 241, 0.12);
+      border: 1px solid rgba(99, 102, 241, 0.25);
+      border-radius: 999px;
+      margin-bottom: 12px;
+    }
+
+    h1 {
+      font-size: 22px;
+      font-weight: 600;
+      color: #f8fafc;
+      letter-spacing: -0.5px;
+    }
+
+    .timer-display {
+      font-size: 64px;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+      margin: 32px 0 24px 0;
+      color: #ffffff;
+      text-shadow: 0 0 20px rgba(129, 140, 248, 0.35);
+      transition: all 0.3s ease;
+    }
+
+    .timer-display.running {
+      animation: pulse 2s infinite ease-in-out;
+      color: #a5b4fc;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.02); opacity: 0.9; }
+    }
+
+    .status-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 28px;
+      font-size: 13px;
+      color: #94a3b8;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #64748b;
+      transition: background 0.3s ease;
+    }
+
+    .status-dot.active {
+      background: #22c55e;
+      box-shadow: 0 0 8px #22c55e;
+    }
+
+    .buttons {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+    }
+
+    button {
+      flex: 1;
+      padding: 12px 0;
+      font-size: 14px;
+      font-weight: 600;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+      color: #ffffff;
+      box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
+    }
+
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #cbd5e1;
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #ffffff;
+      transform: translateY(-2px);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="badge">Vibe-Coded v1</div>
+    <h1>StudyTimer</h1>
+    
+    <div id="timer" class="timer-display">25:00</div>
+    
+    <div class="status-container">
+      <div id="statusDot" class="status-dot"></div>
+      <span id="statusText">Ready to start</span>
+    </div>
+
+    <div class="buttons">
+      <button id="startBtn" class="btn-primary">Start</button>
+      <button id="pauseBtn" class="btn-secondary">Pause</button>
+      <button id="resetBtn" class="btn-secondary">Reset</button>
+    </div>
+  </div>
+
+  <script>
+    let timeLeft = 25 * 60;
+    let timerId = null;
+
+    const timerDisplay = document.getElementById('timer');
+    const statusText = document.getElementById('statusText');
+    const statusDot = document.getElementById('statusDot');
+    const startBtn = document.getElementById('startBtn');
+    const pauseBtn = document.getElementById('pauseBtn');
+    const resetBtn = document.getElementById('resetBtn');
+
+    function updateDisplay() {
+      const minutes = Math.floor(timeLeft / 60);
+      const seconds = timeLeft % 60;
+      timerDisplay.textContent = 
+        `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }
+
+    startBtn.addEventListener('click', () => {
+      if (timerId !== null) return;
+      statusText.textContent = 'Focusing...';
+      statusDot.classList.add('active');
+      timerDisplay.classList.add('running');
+
+      timerId = setInterval(() => {
+        if (timeLeft > 0) {
+          timeLeft--;
+          updateDisplay();
+        } else {
+          clearInterval(timerId);
+          timerId = null;
+          statusText.textContent = 'Session Completed';
+          statusDot.classList.remove('active');
+          timerDisplay.classList.remove('running');
+          alert('Focus session complete!');
+        }
+      }, 1000);
+    });
+
+    pauseBtn.addEventListener('click', () => {
+      clearInterval(timerId);
+      timerId = null;
+      statusText.textContent = 'Paused';
+      statusDot.classList.remove('active');
+      timerDisplay.classList.remove('running');
+    });
+
+    resetBtn.addEventListener('click', () => {
+      clearInterval(timerId);
+      timerId = null;
+      timeLeft = 25 * 60;
+      updateDisplay();
+      statusText.textContent = 'Ready to start';
+      statusDot.classList.remove('active');
+      timerDisplay.classList.remove('running');
+    });
+  </script>
+</body>
+</html>
